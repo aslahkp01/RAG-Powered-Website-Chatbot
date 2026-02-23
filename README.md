@@ -25,6 +25,7 @@ The system ensures minimal latency and robust handling of both structured and un
 User → Frontend → Backend → Crawler → Chunking → Embeddings → Vector DB → Retriever → LLM → Response
 
 🧠 Key Features
+
 ✅ Recursive Crawling
 
 Crawls internal links up to configurable depth
@@ -176,15 +177,15 @@ Deployment with Docker
 
 This project demonstrates:
 
-Practical RAG implementation
+- Practical RAG implementation
 
-Real-world web crawling challenges
+- Real-world web crawling challenges
 
-Hallucination mitigation
+- Hallucination mitigation
 
-Vector search integration
+- Vector search integration
 
-Production-oriented architecture thinking
+- Production-oriented architecture thinking
 
 👤 Author
 

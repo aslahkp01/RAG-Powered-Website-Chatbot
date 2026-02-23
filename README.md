@@ -21,25 +21,8 @@ Receive hallucination-controlled answers
 The system ensures minimal latency and robust handling of both structured and unstructured web data.
 
 🏗 Architecture
-User
-  ↓
-Frontend (Streamlit)
-  ↓
-Backend (Python)
-  ↓
-Crawler (Recursive)
-  ↓
-Text Cleaning & Chunking
-  ↓
-Embeddings
-  ↓
-Vector Database (FAISS)
-  ↓
-Retriever
-  ↓
-LLM (Groq)
-  ↓
-Grounded Response
+
+User → Frontend → Backend → Crawler → Chunking → Embeddings → Vector DB → Retriever → LLM → Response
 
 🧠 Key Features
 ✅ Recursive Crawling

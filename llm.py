@@ -32,7 +32,7 @@ Answer:
     try:
         response = client.chat.completions.create(
             model=Config.LLM_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "system", "content": "You are a strict RAG assistant."},{"role": "user", "content": prompt}],
             temperature=0.3,
         )
 

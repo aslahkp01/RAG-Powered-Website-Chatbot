@@ -1,8 +1,10 @@
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from langchain_core.documents import Document
 from config import Config
+
+scraper = cloudscraper.create_scraper()
 
 def clean_text(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -28,10 +30,9 @@ def crawl(url, depth=0, visited=None):
         return []
 
     try:
-        response = requests.get(
+        response = scraper.get(
             url,
-            headers={"User-Agent": Config.USER_AGENT},
-            timeout=8,
+            timeout=10,
         )
         response.raise_for_status()
     except:

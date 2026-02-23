@@ -7,7 +7,7 @@ class Config:
     USER_AGENT = "Mozilla/5.0"
 
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+    
 
     MAX_DEPTH = 1
     MAX_PAGES = 10

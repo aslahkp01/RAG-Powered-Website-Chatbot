@@ -1,11 +1,13 @@
 from groq import Groq
-from config import Config
+
+from .config import Config
 
 client = Groq(api_key=Config.GROQ_API_KEY)
 
+
 def generate_answer(question, context):
     prompt = f"""
-You are a professional AI assistant specialized in answering questions 
+You are a professional AI assistant specialized in answering questions
 about the provided website content.
 
 Your rules:
@@ -32,7 +34,10 @@ Answer:
     try:
         response = client.chat.completions.create(
             model=Config.LLM_MODEL,
-            messages=[{"role": "system", "content": "You are a strict RAG assistant."},{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a strict RAG assistant."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.3,
         )
 

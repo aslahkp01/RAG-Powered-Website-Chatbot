@@ -2,15 +2,18 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from langchain_core.documents import Document
-from config import Config
+
+from .config import Config
 
 scraper = cloudscraper.create_scraper()
+
 
 def clean_text(html):
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header"]):
         tag.decompose()
     return " ".join(soup.get_text(separator=" ").split())
+
 
 def extract_links(base_url, html):
     soup = BeautifulSoup(html, "html.parser")
@@ -21,6 +24,7 @@ def extract_links(base_url, html):
         if parsed.netloc == urlparse(base_url).netloc:
             links.append(full_url)
     return links
+
 
 def crawl(url, depth=0, visited=None):
     if visited is None:
@@ -35,7 +39,7 @@ def crawl(url, depth=0, visited=None):
             timeout=10,
         )
         response.raise_for_status()
-    except:
+    except Exception:
         return []
 
     visited.add(url)

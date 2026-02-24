@@ -1,193 +1,94 @@
-📌 RAG-Powered Website Chatbot
+# RAG-Powered Website Chatbot
 
-A production-oriented Retrieval-Augmented Generation (RAG) chatbot that ingests any website URL, recursively crawls internal links, and answers user questions strictly based on the collected content.
+A production-oriented Retrieval-Augmented Generation (RAG) chatbot that crawls a website and answers questions strictly from indexed website content.
 
-🚀 Project Overview
+## Current Features
 
-This project allows users to:
+- FastAPI backend with REST endpoints for indexing and chat
+- React + Vite frontend with modern chat UI
+- Dark/Light theme toggle with saved preference (localStorage)
+- Recursive internal-link crawler with page/depth limits
+- FAISS vector store + MMR retrieval for relevant context
+- Groq LLM answering with strict RAG grounding prompt
+- Local dev script to start backend and frontend together
+- Frontend API proxy in Vite to avoid dev CORS fetch errors
 
-Input any website URL
+## Project Structure
 
-Automatically crawl and extract relevant content
+```text
+backend/
+  main.py         # FastAPI app and API routes
+  config.py       # Environment/config values
+  crawler.py      # Recursive crawler and text extraction
+  vectorstore.py  # Chunking + embeddings + FAISS
+  retriever.py    # Retrieval strategy
+  llm.py          # Groq answer generation
 
-Convert content into embeddings
+frontend/
+  src/App.jsx     # Main UI and API calls
+  src/styles.css  # Modern + dark mode styles
+  vite.config.js  # Dev proxy config
 
-Store them in a vector database
+start-dev.ps1     # Starts backend + frontend locally (Windows)
+requirements.txt
+```
 
-Ask questions grounded strictly in the scraped content
+## API Endpoints
 
-Receive hallucination-controlled answers
+- `GET /api/health` → service health
+- `POST /api/index` → crawl + index website URL
+- `POST /api/chat` → ask question against indexed session
 
-The system ensures minimal latency and robust handling of both structured and unstructured web data.
+## Environment Variables
 
-🏗 Architecture
+Create a `.env` file in project root:
 
-User → Frontend → Backend → Crawler → Chunking → Embeddings → Vector DB → Retriever → LLM → Response
-
-🧠 Key Features
-
-✅ Recursive Crawling
-
-Crawls internal links up to configurable depth
-
-Prevents duplicate visits
-
-Respects max page limits
-
-✅ Robust Content Extraction
-
-Removes scripts and styles
-
-Handles structured data (lists, tables)
-
-Handles unstructured text (paragraphs)
-
-✅ Strict RAG Grounding
-
-Answers only from provided context
-
-No external knowledge leakage
-
-Controlled hallucination
-
-Clear fallback when information is missing
-
-✅ Anti-Bot Handling
-
-Uses cloudscraper to bypass basic Cloudflare protection
-
-Graceful error handling for blocked sites
-
-✅ Performance Optimized
-
-Configurable crawl depth
-
-Configurable max pages
-
-Low LLM temperature for stable responses
-
-🛠 Tech Stack
-
-- Python
-
-- BeautifulSoup
-
-- Cloudscraper
-
-- LangChain
-
-- FAISS(Vector DB)
-
-- Groq LLM
-
-- Streamlit (or React + FastAPI)
-
-⚙️ Installation
-
-git clone <your-repo-url>
-cd project-folder
-pip install -r requirements.txt
-
-- Create a .env or configure:
-
+```env
 GROQ_API_KEY=your_key_here
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
 
-- Run:
+Optional frontend env in `frontend/.env`:
 
-streamlit run app.py
+```env
+VITE_API_BASE=http://127.0.0.1:8000
+```
 
-🔬 Evaluation Methodology
+If `VITE_API_BASE` is not set, frontend uses relative `/api` and Vite proxy in dev.
 
-The chatbot was evaluated using the following criteria:
+## Run Locally
 
-1️⃣ URL Ingestion
+### Option 1: One command (Windows)
 
-Tested with:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-dev.ps1
+```
 
-Static websites
+### Option 2: Manual
 
-Corporate websites
+Backend:
 
-Documentation websites
+```bash
+pip install -r requirements.txt
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
-Result: Successfully extracted content in most cases.
+Frontend:
 
-2️⃣ Recursive Crawling
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-Verified multiple internal pages were indexed.
+## Build Frontend
 
-Confirmed by tracking unique visited URLs.
+```bash
+cd frontend
+npm run build
+```
 
-3️⃣ Hallucination Control
+## Known Limitations
 
-Test Queries:
-
-Relevant question → Answered correctly
-
-Unrelated question → Proper refusal
-
-Greeting → Polite response
-
-Example:
-
-Q: Who is Elon Musk?
-A: "I couldn't find that information in the website content."
-
-4️⃣ Structured Data Handling
-
-Tested on:
-
-Lists
-
-Service descriptions
-
-Company metrics
-
-Successfully retrieved numeric data and service offerings.
-
-5️⃣ Latency
-
-Average response time:
-
-1–4 seconds (depending on crawl size)
-
-⚠️ Known Limitations
-
-JavaScript-heavy websites may not fully render without browser automation.
-
-Advanced bot-protected websites may block scraping.
-
-Does not currently implement rate limiting.
-
-📈 Future Improvements
-
-Async crawling for faster indexing
-
-Better semantic filtering of navigation content
-
-Hybrid search (BM25 + Vector)
-
-Caching embeddings
-
-Frontend UI enhancement
-
-Deployment with Docker
-
-🎯 Why This Project Matters
-
-This project demonstrates:
-
-- Practical RAG implementation
-
-- Real-world web crawling challenges
-
-- Hallucination mitigation
-
-- Vector search integration
-
-- Production-oriented architecture thinking
-
-👤 Author
-
-Muhammad Aslah
-2026
+- JavaScript-heavy websites may require browser automation for full rendering.
+- Some anti-bot protected websites may block crawling.

@@ -4,6 +4,30 @@ const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const apiUrl = (path) => `${API_BASE}${path}`;
 
+const parseApiResponse = async (response, fallbackMessage) => {
+  const rawBody = await response.text();
+  let body = null;
+
+  if (rawBody) {
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      body = null;
+    }
+  }
+
+  if (!response.ok) {
+    const detail = body?.detail || body?.message || fallbackMessage;
+    throw new Error(detail);
+  }
+
+  if (!body) {
+    throw new Error("Server returned an empty response.");
+  }
+
+  return body;
+};
+
 export default function App() {
   const [url, setUrl] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -40,10 +64,7 @@ export default function App() {
         body: JSON.stringify({ url: url.trim() }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Failed to index website.");
-      }
+      const data = await parseApiResponse(response, "Failed to index website.");
 
       setSessionId(data.session_id);
       setChatHistory([]);
@@ -76,10 +97,7 @@ export default function App() {
         body: JSON.stringify({ session_id: sessionId, question: userQuestion }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Failed to get answer.");
-      }
+      const data = await parseApiResponse(response, "Failed to get answer.");
 
       setChatHistory(data.history || []);
     } catch (err) {

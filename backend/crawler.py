@@ -36,7 +36,8 @@ def crawl(url, depth=0, visited=None):
     try:
         response = scraper.get(
             url,
-            timeout=10,
+            timeout=Config.CRAWL_TIMEOUT,
+            headers={"User-Agent": Config.USER_AGENT},
         )
         response.raise_for_status()
     except Exception:

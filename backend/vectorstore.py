@@ -4,6 +4,17 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 from .config import Config
 
+_embeddings = None
+
+
+def _get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(
+            model_name=Config.EMBEDDING_MODEL
+        )
+    return _embeddings
+
 
 def build_vector_store(documents):
     if not documents:
@@ -16,10 +27,6 @@ def build_vector_store(documents):
 
     split_docs = splitter.split_documents(documents)
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name=Config.EMBEDDING_MODEL
-    )
-
-    vector_store = FAISS.from_documents(split_docs, embeddings)
+    vector_store = FAISS.from_documents(split_docs, _get_embeddings())
 
     return vector_store, len(split_docs)

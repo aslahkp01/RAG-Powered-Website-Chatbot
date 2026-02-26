@@ -7,6 +7,8 @@ load_dotenv()
 class Config:
     USER_AGENT = "Mozilla/5.0"
 
+    CRAWL_TIMEOUT = 8
+
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
     MAX_DEPTH = 1

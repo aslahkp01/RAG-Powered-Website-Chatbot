@@ -10,9 +10,15 @@ from .crawler import crawl
 from .config import Config
 from .llm import generate_answer
 from .retriever import retrieve_documents
-from .vectorstore import build_vector_store
+from .vectorstore import build_vector_store, _get_embeddings
 
 app = FastAPI(title="RAG Web Scraper API", version="1.0.0")
+
+
+@app.on_event("startup")
+def preload_models():
+    """Eagerly load the embedding model so the first /api/index call is fast."""
+    _get_embeddings()
 
 app.add_middleware(
     CORSMiddleware,

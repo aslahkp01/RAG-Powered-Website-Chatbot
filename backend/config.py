@@ -15,7 +15,10 @@ class Config:
     CHUNK_SIZE = 800
     CHUNK_OVERLAP = 100
 
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    CORS_ORIGINS = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://rag-powered-website-chatbot.vercel.app",
+    ).split(",")
 
     EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
     LLM_MODEL = "llama-3.1-8b-instant"

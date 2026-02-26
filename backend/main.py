@@ -17,8 +17,9 @@ app = FastAPI(title="RAG Web Scraper API", version="1.0.0")
 
 @app.on_event("startup")
 def preload_models():
-    """Eagerly load the embedding model so the first /api/index call is fast."""
-    _get_embeddings()
+    """Load the embedding model in a background thread so the port binds immediately."""
+    threading.Thread(target=_get_embeddings, daemon=True).start()
+
 
 app.add_middleware(
     CORSMiddleware,

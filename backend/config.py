@@ -35,4 +35,3 @@ class Config:
 
     # ── Paths ──────────────────────────────────────────────
     DATA_DIR = str(_BASE_DIR / "data" / "vectorstores")
-    MODEL_CACHE_DIR = str(_BASE_DIR / "model_cache")

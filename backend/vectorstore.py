@@ -1,3 +1,4 @@
+import gc
 import os
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -15,7 +16,6 @@ def _get_embeddings():
     if _embeddings is None:
         _embeddings = FastEmbedEmbeddings(
             model_name=Config.EMBEDDING_MODEL,
-            cache_dir=Config.MODEL_CACHE_DIR,
         )
     return _embeddings
 
@@ -37,8 +37,14 @@ def build_vector_store(documents):
     if len(split_docs) > Config.MAX_CHUNKS:
         split_docs = split_docs[: Config.MAX_CHUNKS]
 
+    chunk_count = len(split_docs)
     vector_store = FAISS.from_documents(split_docs, _get_embeddings())
-    return vector_store, len(split_docs)
+
+    # Free splitter / intermediate objects
+    del split_docs
+    gc.collect()
+
+    return vector_store, chunk_count
 
 
 # ── Disk persistence ─────────────────────────────────────────

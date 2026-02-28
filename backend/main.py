@@ -1,3 +1,4 @@
+import gc
 import json
 import os
 import threading
@@ -100,14 +101,22 @@ def _restore_sessions() -> None:
 
 
 def _get_or_load_vectorstore(session_id: str):
-    """Return vector store from RAM cache, or load from disk."""
+    """Return vector store from RAM cache, or load from disk.
+
+    Only ONE vector store is kept in memory at a time to stay
+    within the 512 MB Render free-tier limit.
+    """
     vs = _vectorstores.get(session_id)
     if vs is not None:
         return vs
+
     vs = load_vector_store(session_id)
     if vs is not None:
         with _state_lock:
+            # Evict all other vector stores from RAM
+            _vectorstores.clear()
             _vectorstores[session_id] = vs
+        gc.collect()
     return vs
 
 
@@ -154,8 +163,11 @@ def index_site(payload: IndexRequest) -> IndexResponse:
 
     session_id = str(uuid.uuid4())
     with _state_lock:
+        # Evict previous vector stores to free RAM
+        _vectorstores.clear()
         _vectorstores[session_id] = vector_store
         _sessions[session_id] = SessionData(url=str(payload.url), history=[])
+    gc.collect()
 
     # Persist vector store + metadata to disk
     save_vector_store(vector_store, session_id)

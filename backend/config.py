@@ -16,9 +16,9 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
     MAX_DEPTH = 1
-    MAX_PAGES = 10
+    MAX_PAGES = 5
 
-    CHUNK_SIZE = 800
+    CHUNK_SIZE = 300
     CHUNK_OVERLAP = 100
 
     CORS_ORIGINS = os.getenv(

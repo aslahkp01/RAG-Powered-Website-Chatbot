@@ -1,3 +1,5 @@
+import json
+import os
 import threading
 import uuid
 from typing import Dict, List, Literal
@@ -10,25 +12,18 @@ from .crawler import crawl
 from .config import Config
 from .llm import generate_answer
 from .retriever import retrieve_documents
-from .vectorstore import build_vector_store, _get_embeddings
+from .vectorstore import (
+    build_vector_store,
+    save_vector_store,
+    load_vector_store,
+    list_persisted_sessions,
+    _get_embeddings,
+)
 
 app = FastAPI(title="RAG Web Scraper API", version="1.0.0")
 
 
-@app.on_event("startup")
-def preload_models():
-    """Load the embedding model in a background thread so the port binds immediately."""
-    threading.Thread(target=_get_embeddings, daemon=True).start()
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=Config.CORS_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://rag-powered-website-chatbot\.vercel\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# ── Pydantic models ──────────────────────────────────────────────
 
 
 class IndexRequest(BaseModel):
@@ -61,10 +56,87 @@ class SessionData(BaseModel):
     history: List[Message]
 
 
+# ── In-memory caches (vector stores loaded on-demand) ────────────
+
 _vectorstores: Dict[str, object] = {}
 _sessions: Dict[str, SessionData] = {}
 _state_lock = threading.Lock()
 
+
+# ── Helpers: persist / restore sessions ──────────────────────────
+
+def _meta_path(session_id: str) -> str:
+    return os.path.join(Config.DATA_DIR, session_id, "meta.json")
+
+
+def _persist_session(session_id: str) -> None:
+    """Write session metadata alongside its FAISS index."""
+    session = _sessions.get(session_id)
+    if not session:
+        return
+    path = os.path.join(Config.DATA_DIR, session_id)
+    os.makedirs(path, exist_ok=True)
+    with open(os.path.join(path, "meta.json"), "w") as f:
+        json.dump(
+            {"url": session.url, "history": [m.model_dump() for m in session.history]},
+            f,
+        )
+
+
+def _restore_sessions() -> None:
+    """Reload session metadata from disk (vector stores stay on disk until needed)."""
+    for sid in list_persisted_sessions():
+        mp = _meta_path(sid)
+        if not os.path.isfile(mp):
+            continue
+        with open(mp) as f:
+            meta = json.load(f)
+        with _state_lock:
+            if sid not in _sessions:
+                _sessions[sid] = SessionData(
+                    url=meta.get("url", ""),
+                    history=[Message(**m) for m in meta.get("history", [])],
+                )
+
+
+def _get_or_load_vectorstore(session_id: str):
+    """Return vector store from RAM cache, or load from disk."""
+    vs = _vectorstores.get(session_id)
+    if vs is not None:
+        return vs
+    vs = load_vector_store(session_id)
+    if vs is not None:
+        with _state_lock:
+            _vectorstores[session_id] = vs
+    return vs
+
+
+# ── Startup ──────────────────────────────────────────────────────
+
+@app.on_event("startup")
+def startup():
+    os.makedirs(Config.DATA_DIR, exist_ok=True)
+    threading.Thread(target=_bootstrap, daemon=True).start()
+
+
+def _bootstrap():
+    _get_embeddings()       # warm-up embedding model
+    _restore_sessions()     # reload metadata from disk
+
+
+# ── CORS ─────────────────────────────────────────────────────────
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=Config.CORS_ORIGINS,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://rag-powered-website-chatbot\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ── Routes ───────────────────────────────────────────────────────
 
 @app.get("/api/health")
 def health() -> dict:
@@ -85,6 +157,10 @@ def index_site(payload: IndexRequest) -> IndexResponse:
         _vectorstores[session_id] = vector_store
         _sessions[session_id] = SessionData(url=str(payload.url), history=[])
 
+    # Persist vector store + metadata to disk
+    save_vector_store(vector_store, session_id)
+    _persist_session(session_id)
+
     return IndexResponse(
         session_id=session_id,
         pages_crawled=len(documents),
@@ -99,8 +175,9 @@ def chat(payload: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     with _state_lock:
-        vector_store = _vectorstores.get(payload.session_id)
         session = _sessions.get(payload.session_id)
+
+    vector_store = _get_or_load_vectorstore(payload.session_id)
 
     if vector_store is None or session is None:
         raise HTTPException(status_code=404, detail="Session not found. Index a website first.")
@@ -115,5 +192,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
     with _state_lock:
         session.history.append(user_message)
         session.history.append(assistant_message)
+
+    _persist_session(payload.session_id)
 
     return ChatResponse(answer=answer, history=session.history)

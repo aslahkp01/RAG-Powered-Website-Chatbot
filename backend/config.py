@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+_BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Config:
@@ -24,3 +28,7 @@ class Config:
 
     EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
     LLM_MODEL = "llama-3.1-8b-instant"
+
+    # ── Paths ──────────────────────────────────────────────
+    DATA_DIR = str(_BASE_DIR / "data" / "vectorstores")
+    MODEL_CACHE_DIR = str(_BASE_DIR / "model_cache")

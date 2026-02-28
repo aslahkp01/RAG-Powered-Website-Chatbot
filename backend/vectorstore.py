@@ -32,6 +32,11 @@ def build_vector_store(documents):
     )
 
     split_docs = splitter.split_documents(documents)
+
+    # Hard cap – prevents OOM on heavy websites
+    if len(split_docs) > Config.MAX_CHUNKS:
+        split_docs = split_docs[: Config.MAX_CHUNKS]
+
     vector_store = FAISS.from_documents(split_docs, _get_embeddings())
     return vector_store, len(split_docs)
 

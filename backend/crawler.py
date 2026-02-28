@@ -46,6 +46,10 @@ def crawl(url, depth=0, visited=None):
     visited.add(url)
     text = clean_text(response.text)
 
+    # Truncate to keep memory bounded on heavy pages
+    if len(text) > Config.MAX_TEXT_PER_PAGE:
+        text = text[: Config.MAX_TEXT_PER_PAGE]
+
     documents = [
         Document(
             page_content=text,
